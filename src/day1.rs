@@ -52,3 +52,17 @@ pub fn part2(input: &str) -> usize {
     }
     count
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    const INPUT: &str = "L68\nL30\nR48\nL5\nR60\nL55\nL1\nL99\nR14\nL82";
+    #[test]
+    fn test_part1() {
+        assert_eq!(part1(INPUT), 4);
+    }
+    #[test]
+    fn test_part2() {
+        assert_eq!(part2(INPUT), 6);
+    }
+}
