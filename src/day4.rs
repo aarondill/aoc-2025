@@ -1,4 +1,4 @@
-use crate::utils::grid::Grid;
+use grid::Grid;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum Space {
@@ -21,28 +21,29 @@ fn parse(input: &str) -> Input {
                 })
                 .collect()
         })
-        .collect()
+        .collect::<Vec<_>>()
+        .into()
 }
 
 #[aoc(day4, part1)]
 fn part1(input: &Input) -> usize {
-    (0..input.width())
-        .flat_map(|x| (0..input.height()).map(move |y| (x, y)))
-        .filter(|&(x, y)| *input.get(x, y) == Space::Paper)
-        .filter(|&(x, y)| {
+    input
+        .indexed_iter()
+        .filter(|&(_, &space)| space == Space::Paper)
+        .filter(|&((y, x), _)| {
             let paper_adjacent = (-1..=1)
                 .into_iter()
-                .flat_map(|dx| (-1..=1).into_iter().map(move |dy| (dx, dy)))
-                .filter(|&(dx, dy)| dx != 0 || dy != 0)
-                .map(|(dx, dy)| (x as isize + dx, y as isize + dy))
-                .filter_map(|(x, y)| {
+                .flat_map(|dy| (-1..=1).into_iter().map(move |dx| (dy, dx)))
+                .filter(|&(dy, dx)| dx != 0 || dy != 0)
+                .map(|(dy, dx)| (y as isize + dy, x as isize + dx))
+                .filter_map(|(y, x)| {
                     if x < 0 || y < 0 {
                         return None;
                     }
-                    let (x, y) = (x as usize, y as usize);
-                    if x < input.width() && y < input.height() { Some((x, y)) } else { None }
+                    let (y, x) = (y as usize, x as usize);
+                    if x < input.cols() && y < input.rows() { Some((y, x)) } else { None }
                 })
-                .filter(|&(x, y)| *input.get(x, y) == Space::Paper)
+                .filter(|&pos| input[pos] == Space::Paper)
                 .count();
             paper_adjacent < 4
         })
