@@ -1,4 +1,4 @@
-type Input = &str;
+type Input = String;
 #[aoc_generator(day_)]
 fn parse(input: &str) -> Input {}
 
