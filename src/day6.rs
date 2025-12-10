@@ -21,12 +21,6 @@ impl Operator {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct Problem {
-    values: Vec<u64>,
-    operator: Operator,
-}
-
 type Input = (Vec<String>, Vec<Operator>);
 #[aoc_generator(day6)]
 fn parse(input: &str) -> Input {
@@ -49,23 +43,25 @@ fn part1(input: &Input) -> u64 {
     // use the grid to transpose for us
     grid.iter_cols()
         .enumerate()
-        .map(|(i, col)| Problem { values: col.copied().collect(), operator: operators[i] })
-        .map(|p| p.values.into_iter().reduce(|a, b| p.operator.apply(a, b)).expect("empty values!"))
+        .map(|(i, col)| (operators[i], col))
+        .map(|(op, col)| col.copied().reduce(|a, b| op.apply(a, b)).expect("empty values!"))
         .sum()
 }
 
 #[aoc(day6, part2)]
 fn part2(input: &Input) -> u64 {
     let (value_lines, operators) = input;
-    // A grid of digits, but None for empty cells
-    let mut digit_grid: Grid<Option<u64>> = value_lines
+    // A grid of digits, but with None for empty cells
+    let digit_grid: Grid<Option<u64>> = value_lines
         .into_iter()
-        .map(|line| line.chars().map(|s| s.to_digit(10).map(|d| d as u64)).collect::<Vec<_>>())
+        .map(|line| {
+            // Add a column of Nones to the left for easier parsing
+            std::iter::once(None)
+                .chain(line.chars().map(|s| s.to_digit(10).map(|d| d as u64)))
+                .collect::<Vec<_>>()
+        })
         .collect::<Vec<_>>()
         .into();
-    // Add a row of Nones to the left for easier parsing
-    digit_grid.insert_col(0, vec![None; digit_grid.rows()]);
-    let digit_grid = digit_grid;
 
     // right to left!
     let mut iter = digit_grid.iter_cols().rev();
@@ -74,14 +70,12 @@ fn part2(input: &Input) -> u64 {
         .rev()
         .copied()
         .map(|operator| {
-            let values = iter
-                .by_ref()
+            iter.by_ref()
+                // We've reached the end of a problem's input values when we hit a column of Nones (which results in reduce returning None)
                 .map_while(|row| row.copied().filter_map(|v| v).reduce(|a, b| a * 10 + b))
-                .collect::<Vec<_>>();
-            assert!(!values.is_empty());
-            Problem { values, operator }
+                .reduce(|a, b| operator.apply(a, b))
+                .expect("empty values!")
         })
-        .map(|p| p.values.into_iter().reduce(|a, b| p.operator.apply(a, b)).expect("empty values!"))
         .sum()
 }
 
