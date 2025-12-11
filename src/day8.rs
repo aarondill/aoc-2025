@@ -5,10 +5,10 @@ struct Node {
     y: i64,
     z: i64,
 }
-type Input = Vec<Node>;
+type Input = (Vec<Node>, HashMap<(Node, Node), f64>);
 #[aoc_generator(day8)]
 fn parse(input: &str) -> Input {
-    input
+    let nodes = input
         .lines()
         .map(|line| {
             let mut parts = line.split(',').map(|s| s.trim().parse().unwrap());
@@ -20,7 +20,19 @@ fn parse(input: &str) -> Input {
             assert_eq!(parts.next(), None);
             n
         })
-        .collect()
+        .collect::<Vec<_>>();
+
+    let map = nodes
+        .iter()
+        .flat_map(|&n| {
+            nodes.iter().filter(move |&&m| m != n).map(move |&m| {
+                let d =
+                    (((n.x - m.x).pow(2) + (n.y - m.y).pow(2) + (n.z - m.z).pow(2)) as f64).sqrt();
+                ((n, m), d)
+            })
+        })
+        .collect::<HashMap<_, _>>();
+    (nodes, map)
 }
 fn count_nodes_graph(
     n: &Node,
@@ -39,18 +51,10 @@ fn count_nodes_graph(
 
 #[aoc(day8, part1)]
 fn part1(input: &Input) -> usize {
-    let l = if input.len() == 1000 { 1000 } else { 10 };
+    let (nodes, map) = input;
+    let mut map = map.clone();
+    let l = if nodes.len() == 1000 { 1000 } else { 10 };
 
-    let mut map = HashMap::new();
-    for &n in input {
-        for &m in input {
-            if n == m {
-                continue;
-            }
-            let d = (((n.x - m.x).pow(2) + (n.y - m.y).pow(2) + (n.z - m.z).pow(2)) as f64).sqrt();
-            map.insert((n, m), d);
-        }
-    }
     // Node -> vec<Node>
     let mut connections = HashMap::<_, Vec<_>>::new();
 
@@ -65,42 +69,30 @@ fn part1(input: &Input) -> usize {
 
     let mut visited = HashSet::<Node>::new();
     let mut graph_sizes =
-        input.iter().map(|n| count_nodes_graph(n, &connections, &mut visited)).collect::<Vec<_>>();
+        nodes.iter().map(|n| count_nodes_graph(n, &connections, &mut visited)).collect::<Vec<_>>();
     graph_sizes.sort();
     graph_sizes.iter().rev().filter(|&&n| n > 0).take(3).product()
 }
-fn is_fully_connected(connections: &HashMap<Node, Vec<Node>>, input: &Input) -> bool {
-    count_nodes_graph(&input[0], connections, &mut HashSet::new()) == input.len()
+fn is_fully_connected(connections: &HashMap<Node, Vec<Node>>, nodes: &Vec<Node>) -> bool {
+    count_nodes_graph(&nodes[0], connections, &mut HashSet::new()) == nodes.len()
 }
 
 #[aoc(day8, part2)]
 fn part2(input: &Input) -> i64 {
-    let mut map = HashMap::new();
-    for &n in input {
-        for &m in input {
-            if n == m {
-                continue;
-            }
-            let d = (((n.x - m.x).pow(2) + (n.y - m.y).pow(2) + (n.z - m.z).pow(2)) as f64).sqrt();
-            map.insert((n, m), d);
-        }
-    }
-    // Node -> vec<Node>
+    let (nodes, map) = input;
+    let mut map = map.clone();
     let mut connections = HashMap::<_, Vec<_>>::new();
-
-    let mut prev;
-    loop {
-        let (a, b) = map.iter().min_by(|(_, a), (_, b)| a.total_cmp(b)).map(|(n, _)| *n).unwrap();
+    let prev = loop {
+        let (a, b) = map.iter().min_by(|&(_, a), &(_, b)| a.total_cmp(b)).map(|(n, _)| *n).unwrap();
         map.remove(&(a, b));
         map.remove(&(b, a));
         // Bi-directional
         connections.entry(a).or_default().push(b);
         connections.entry(b).or_default().push(a);
-        prev = (a, b);
-        if is_fully_connected(&connections, input) {
-            break;
+        if is_fully_connected(&connections, nodes) {
+            break (a, b);
         }
-    }
+    };
     prev.0.x * prev.1.x
 }
 
