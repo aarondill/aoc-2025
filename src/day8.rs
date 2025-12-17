@@ -1,4 +1,6 @@
 use std::collections::{HashMap, HashSet};
+
+use crate::util::IterCombinationsPairs;
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 struct Node {
     x: i64,
@@ -23,16 +25,11 @@ fn parse(input: &str) -> Input {
         .collect::<Vec<_>>();
 
     let mut map = nodes
-        .iter()
-        .enumerate()
-        .flat_map(|(i, &n)| {
-            nodes.iter().skip(i + 1).map(move |&m| {
-                let x = n.x.abs_diff(m.x);
-                let y = n.y.abs_diff(m.y);
-                let z = n.z.abs_diff(m.z);
-                let d = x * x + y * y + z * z;
-                (n, m, d)
-            })
+        .iter_combinations()
+        .map(|[n, m]| [n.clone(), m.clone()]) // I don't want to deal with lifetimes
+        .map(|[n, m]| {
+            let d = n.x.abs_diff(m.x).pow(2) + n.y.abs_diff(m.y).pow(2) + n.z.abs_diff(m.z).pow(2);
+            (n, m, d)
         })
         .collect::<Vec<_>>();
     map.sort_unstable_by_key(|(.., d)| *d);
