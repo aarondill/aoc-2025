@@ -1,24 +1,4 @@
-mod joltage {
-    #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-    pub struct Joltage(u8);
-    impl std::fmt::Debug for Joltage {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "{}", self.0)
-        }
-    }
-    impl Joltage {
-        pub fn new(num: u8) -> Self {
-            assert!(num > 0 && num < 10);
-            Self(num)
-        }
-
-        pub fn value(&self) -> u8 {
-            self.0
-        }
-    }
-}
-use joltage::Joltage;
-
+type Joltage = u8;
 type BatteryBank = Vec<Joltage>;
 
 #[aoc_generator(day3)]
@@ -26,12 +6,7 @@ fn parse(input: &str) -> Vec<BatteryBank> {
     input
         .lines()
         .filter(|line| !line.is_empty())
-        .map(|line| {
-            line.chars()
-                .map(|c| c.to_digit(10).expect("invalid digit") as u8)
-                .map(Joltage::new)
-                .collect()
-        })
+        .map(|line| line.chars().map(|c| c.to_digit(10).expect("invalid digit") as u8).collect())
         .collect()
 }
 fn find_max_ind(bank: &[Joltage]) -> (usize, &Joltage) {
@@ -48,7 +23,7 @@ fn part1(input: &Vec<BatteryBank>) -> u64 {
         .map(|bank| {
             let (max_i, max) = find_max_ind(&bank[..bank.len() - 1]);
             let other = bank[max_i + 1..].into_iter().max().unwrap();
-            (10 * max.value() + other.value()) as u64
+            (10 * max + other) as u64
         })
         .sum()
 }
@@ -61,8 +36,8 @@ fn part2(input: &Vec<BatteryBank>) -> u64 {
             let mut digits = Vec::with_capacity(12);
             let mut start_index = 0;
             for n_remain in (1..=12).rev() {
-                let (idx, max) = find_max_ind(&bank[start_index..=bank.len() - n_remain]);
-                digits.push(max.value() as u64);
+                let (idx, &max) = find_max_ind(&bank[start_index..=bank.len() - n_remain]);
+                digits.push(max as u64);
                 // returned index is relative to the start of the slice
                 start_index += idx + 1;
             }
