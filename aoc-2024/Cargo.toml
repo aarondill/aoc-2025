@@ -1,0 +1,13 @@
+[package]
+name = "aoc-2024"
+edition = "2024"
+version = "0.1.0"
+
+[lib]
+bench = false
+
+[dependencies]
+aoc-runner = { workspace = true }
+aoc-runner-derive = { workspace = true }
+grid = { workspace = true }
+itertools = { workspace = true }

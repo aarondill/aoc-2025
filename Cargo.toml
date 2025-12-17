@@ -1,5 +1,5 @@
 [workspace]
-members = ["aoc-2025"]
+members = ["aoc-2025", "aoc-2024"]
 default-members = ["aoc-2025"]
 
 [workspace.package]
